@@ -13,7 +13,6 @@ import com.google.android.gms.ads.initialization.OnInitializationCompleteListene
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import android.util.Log;
-//import android.widget.Toast;
 
 
 final class Variables

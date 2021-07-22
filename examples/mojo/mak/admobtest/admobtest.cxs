@@ -40,7 +40,7 @@ Class MyApp Extends App
 				interstitialAdmob.ShowAdViewInterstitial
 				state+=1
             Endif
-            state = (state Mod 3 )+1
+            
         End
         'Print "OnUpdate finished**************"
     End
