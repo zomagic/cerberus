@@ -22,7 +22,6 @@ Class MyApp Extends App
         admob.ShowAdView 1,layout
 		interstitialAdmob=AdmobInterstitial.GetAdmobInterstitial("ca-app-pub-3940256099942544/1033173712")
         SetUpdateRate 60
-        Print "OnCreate finished**************"
     End
     
     Method OnUpdate()
@@ -42,7 +41,6 @@ Class MyApp Extends App
             Endif
             
         End
-        'Print "OnUpdate finished**************"
     End
     
     Method OnRender()
