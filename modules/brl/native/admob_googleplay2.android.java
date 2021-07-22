@@ -13,6 +13,8 @@ import com.google.android.gms.ads.initialization.OnInitializationCompleteListene
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 import android.util.Log;
+//import android.widget.Toast;
+
 
 final class Variables
 {
@@ -164,6 +166,8 @@ class BBAdmobInterstitial implements Runnable {
 	
 	// creates an instance of the object and start the thread
 	static public BBAdmobInterstitial GetAdmobInterstitial(String adUnitId){
+		//Toast.makeText(MyActivity.this, "GetAdmobInterstitial", Toast.LENGTH_SHORT).show();
+
 		if( _admob==null ) _admob=new BBAdmobInterstitial();
 		_activity = BBAndroidGame.AndroidGame().GetActivity();
 
@@ -197,10 +201,10 @@ class BBAdmobInterstitial implements Runnable {
 	
 	// loads an ad
 	private void loadAd(){
+		Log.i(TAG, "onAdLoad started ************");	
 		AdRequest adRequest = new AdRequest.Builder().build();
-
-      	InterstitialAd.load(_activity, this.adUnitId, adRequest,
-       		new InterstitialAdLoadCallback() {
+      	InterstitialAd.load(_activity, this.adUnitId, adRequest, 
+      	new InterstitialAdLoadCallback() {
 	      @Override
 	      public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
 	        // The mInterstitialAd reference will be null until
@@ -208,6 +212,32 @@ class BBAdmobInterstitial implements Runnable {
 	        mInterstitialAd = interstitialAd;
 	        loaded=true;
 	       Log.i(TAG, "onAdLoaded");
+	       
+		   interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback(){
+			  @Override
+			  public void onAdDismissedFullScreenContent() {
+			    // Called when fullscreen content is dismissed.
+			    mInterstitialAd = null;
+			    Log.d("TAG", "The ad was dismissed.");
+			  }
+			
+			  @Override
+			  public void onAdFailedToShowFullScreenContent(AdError adError) {
+			    // Called when fullscreen content failed to show.
+			    Log.d("TAG", "The ad failed to show.");
+			  }
+			
+			  @Override
+			  public void onAdShowedFullScreenContent() {
+			    // Called when fullscreen content is shown.
+			    // Make sure to set your reference to null so you don't
+			    // show it a second time.
+			    mInterstitialAd = null;
+			    Log.d("TAG", "The ad was shown.");
+			    loadAd();
+			  }
+			});	       
+	       
 	      }
 
 	      @Override
@@ -218,29 +248,6 @@ class BBAdmobInterstitial implements Runnable {
 	      }
     	});
     	
-    	mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback(){
-		  @Override
-		  public void onAdDismissedFullScreenContent() {
-		    // Called when fullscreen content is dismissed.
-		    Log.d("TAG", "The ad was dismissed.");
-		  }
-		
-		  @Override
-		  public void onAdFailedToShowFullScreenContent(AdError adError) {
-		    // Called when fullscreen content failed to show.
-		    Log.d("TAG", "The ad failed to show.");
-		  }
-		
-		  @Override
-		  public void onAdShowedFullScreenContent() {
-		    // Called when fullscreen content is shown.
-		    // Make sure to set your reference to null so you don't
-		    // show it a second time.
-		    mInterstitialAd = null;
-		    Log.d("TAG", "The ad was shown.");
-		    loadAd();
-		  }
-		});
 	}
 	
 	// the runner
