@@ -3,7 +3,7 @@
 
 # Get this script directory
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-SCRIPT_VER="1.2.0"
+SCRIPT_VER="1.3.0"
 
 TRANSCC_EXE=0                           # Flag to indicate that transcc has been built.
 BULDER_SCRIPT=1                         # Flag that should be used to indicate to other scripts that they should be part of the buildr script. See freedesktop.sh
@@ -25,7 +25,9 @@ source "$SCRIPTPATH/builders/bash/thirdparty.sh"    # Thirdparty functions. Used
 source "$SCRIPTPATH/builders/bash/deploy.sh"        # Script to create a deployment archive.
 source "$SCRIPTPATH/builders/bash/tools.sh"         # Functions to build Cerberus.
 
-# Process command line arguments.
+##################################
+# COMMAND LINE ARGUMET PROCESSING
+##################################
 POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -127,7 +129,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-set -- "${POSITIONAL_ARGS[@]}"
+set -- "${POSITIONAL_ARGS[@]}"  # This should any command line arguments that were not processed
 
 # Check that there is a valid compiler present
 setcompiler
@@ -136,6 +138,9 @@ setcompiler
 # Check for a Qt installation. Ted will only become a build option if Qt is installed.
 do_qtsdk_check
 
+###############
+# MEUN/DISPLAY
+###############
 # Set up the menu items. The array DISPLAY_ITEMS, holds the human readable menu items.
 # The array MENU_ITEMS, holds the function names to call.
 do_items(){

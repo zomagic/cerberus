@@ -3,7 +3,13 @@
 # THIRD-PARTY FUNCTIONS
 # THE SCRIPT IS PART OF THE CERBERUS X BUILER TOOL.
 
-# Extra check if on macOS required.
+#######################################################################################################
+#   DETECTION AND SET UP OF THIRD PARTY TOOLS, FRAME WORKS AND COMPILER TOOL CHAINS
+#######################################################################################################
+
+#######################################
+# QT MAC OS CHECK
+#######################################
 # From Qt 6.1.2 the sdk compiler type directory changed to macos
 do_check_version(){ printf "%03d%03d%03d%03d" $(echo "$1" | tr '.' ' '); }
 
@@ -11,6 +17,9 @@ do_macos_check(){
     [ $(do_check_version $1) -lt $(do_check_version "6.1.2") ] && { QMAKE_TYPE="clang_64"; } || { QMAKE_TYPE="macos"; }
 }
 
+############################
+# QT FRAME WORK DETECTION
+############################
 # Scan the Qt directory passed as a parameter for Qt installations
 do_qtsdk_scanner(){
     
@@ -133,7 +142,9 @@ do_qtsdk_check(){
     return $EXITCODE
 }
 
-# Function to set a compiler.
+############################
+# COMPILER DETECTION
+############################
 setcompiler() {
     do_header "CHECKING FOR COMPILER INSTALLATION"
     [ $HOST = "linux" ] && {

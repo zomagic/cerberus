@@ -4,8 +4,10 @@
 #
 #-------------------------------------------------
 # Change log
+# 2024-08-31 - Dawlane
+#                   Changed how additional options are added to the MS Windows deployment.
 # 2023-04-27 - Dawlane
-#                   Fixed issue with platform pluging not being deployed on Linux builds.
+#                   Fixed issue with platform plugin not being deployed on Linux builds.
 # 2023-04-12 - Dawlane
 #                   Updated macOS to take into account changes to Qt 6.5.0 minimum target.
 #                   Reinstated Linux distribution of Qt dependencies if not built with the Linux repository.
@@ -259,18 +261,26 @@ win32{
     WINDEPLOYQT_OPTS += --no-opengl-sw --no-plugins
 
     # Append additional options based on the Qt version.
-    lessThan(QT_MAJOR_VERSION, 6) {
+    equals(QT_MAJOR_VERSION,5) {
         WINDEPLOYQT_OPTS+= --no-serialport
         lessThan(QT_MINOR_VERSION, 14) {
             WINDEPLOYQT_OPTS += --no-angle
         } else {
             WINDEPLOYQT_OPTS += --no-angle --no-virtualkeyboard 
         }
-    } else {
+    }
+
+    # Qt kit 6.0 - 6.4
+    equals(QT_MAJOR_VERSION,6) {
+        # Qt kit < 6.5
         lessThan(QT_MINOR_VERSION, 5) {
             WINDEPLOYQT_OPTS += --no-serialport
+        } else {
+        # Qt kit 6.5.x
+            lessThan(QT_PATCH_VERSION, 1) {
+                WINDEPLOYQT_OPTS += --no-virtualkeyboard
+            }
         }
-        WINDEPLOYQT_OPTS += --no-virtualkeyboard
     }
 
     # Set up the debug or release

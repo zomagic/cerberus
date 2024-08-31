@@ -2,22 +2,31 @@
 
 # DEPLOYMENT BUILDER FUNCTIONS
 # THE SCRIPT IS PART OF THE CERBERUS X BUILER TOOL.
+
+#############################################
+# BUILD A DEPLOYMENT ARCHIVE
+#############################################
+# This function requires that git be installed.
+# It works by cloning the the current repository, removing any git related items from the clone, and then running the 
+# builder script in the clone with the basic set of parameters that were passed. After the cloned builder script has
+# finished and control is returned to this function. A archive is generated from the freshly built files in the clone.
 do_deploy(){
     EXITCODE=0
-    # Setup local varaibles that point to the deploy locations
+
+    # Set some local variables. Just to make it a bit easier to follow.
     local CX_DEPLOY_ROOT="$DEPLOY/cx_deploy_root"
     local CX_DEPLOY_BUILD="$CX_DEPLOY_ROOT/build"
     local CX_DEPLOY_TARGET="$CX_DEPLOY_BUILD/Cerberus"
     local CX_DEPLOY_BIN="$CX_DEPLOY_TARGET/bin"
     local CX_DEPLOY_SRC="$CX_DEPLOY_TARGET/src"
     
-    # Test for a .git folder
+    # Test for a .git folder. If there isn't one, then it must be a normal set of sources files.
     [ ! -d "$CERBERUS_ROOT_DIR/.git" ] && {
         do_error "Delopyment requires that the sources are contained in a git repository."
         return;
     }
 
-    # Test for a git
+    # Only do a deployment build if git is installed.
     execute git --version
     [ $EXITCODE -ne 0 ] && {
         do_error "git is required to build."
@@ -32,7 +41,8 @@ do_deploy(){
         return;
     }
 
-    # Test if the git repository is in a clean state. And if clean, clone it.
+    ## Test if the git repository is in a clean state. Else issue a error message and return back
+    # to the menu. If everything is okay, then clone the git repository.
     STATUS=$(execute git status 2>&1)
     echo "$STATUS"
     if [[ $STATUS == *"nothing to commit, working tree clean"* ]]; then
@@ -57,13 +67,14 @@ do_deploy(){
         }
     done
 
-    # Generate parameters to pass on.
+    # Generate parameters to pass on to the cloned builder script.
+    # Only the basic parameters need to be passed on.
     PARAMS=("$CX_DEPLOY_SRC/builder.sh")
     if [ -n "$QTDIR" ]; then PARAMS+=("-q" "$QTDIR"); fi
     if [ -n "$QTVER" ]; then PARAMS+=("-k" "$QTVER"); fi
     if [ -n "$ARCHIVER" ]; then PARAMS+=("-a" "$ARCHIVER"); fi
 
-    # Linux or macos specific
+    # Linux or macos specific parameters.
     [ $HOST = "linux" ] && {
         if [[ $GEN_ICONS -eq 1 ]]; then PARAMS+=("-i" "$SVG_APP_ICON" "$SVG_MIME_ICON"); fi
         if [ -n "$GCC_VER" ]; then PARAMS+=("-g" "$GCC_VER"); fi
@@ -72,13 +83,13 @@ do_deploy(){
         if [ -n "$CERT" ]; then PARAMS+=("-c" "$CERT"); fi
     }
 
-    # Start a fresh build script with all the parameters needed.
+    # Start the cloned builder script with the parameter that were passed to the main builder script.
     chmod +x $CX_DEPLOY_SRC/builder.sh
     do_info "Execuiting: 
     ${PARAMS[@]}"
     execute ${PARAMS[@]}
 
-    # Check that the default files have been created before compressing to an archive.
+    # Check that the default files have been created before compressing to an archive. NOTE: Qt SDK's are not included in the check.
     CHECK_FILES=("$CX_DEPLOY_BIN/transcc_$HOST" "$CX_DEPLOY_BIN/makedocs_$HOST")
     [ $HOST = "linux" ] && {
         CHECK_FILES+=("$CX_DEPLOY_BIN/cserver_$HOST" "$CX_DEPLOY_BIN/Ted" "$CX_DEPLOY_TARGET/Cerberus");
@@ -94,14 +105,15 @@ do_deploy(){
         }
     done
 
+    # Only compress if the file count match that of the array.
     [ $CHECK_COUNT -ne ${#CHECK_FILES[@]} ] && {
         do_error "Deployment file error."
         EXITCODE=1
         return $EXITCODE
     }
 
-    # Make sure that the binaries will execute on the end users machine before compressing.
-    # TODO: Check on macOS deployment etc.
+    # Make sure that the binaries will execute permissions before compressing.
+    # TODO: Check the permision requirements for macos.
     [ $HOST = "linux " ] && {
         for i in "${CHECK_FILES[@]}"; do
             do_info "Setting excute permission for $i"
@@ -109,7 +121,7 @@ do_deploy(){
         done;
     }
     
-    # Get the version from the Cerberus versions text file.
+   # Get what should be the first line in the VERSION.TXT file to retrieve the version number.
     while IFS= read -r line; do
         [ "${line:0:1}" = "*" ] && {
             CX_VERSION=$(echo "$line" | sed 's/[* ]//g')
@@ -119,7 +131,8 @@ do_deploy(){
 
     ARCHIVE_CMD=()
 
-    # If there is a Qt version number, then set the file name with the Qt version.
+    # If there is a Qt version number, this mean that there are Qt libraries to install.
+    # Then set the file name with the Qt version.
     [[ $QTVER =~ ^[0-9]+(\.[0-9]+){2,3}$ ]] && {
         FILE_NAME="$CX_DEPLOY_ROOT/Cerberus_$CX_VERSION-qt$QTVER-$HOST."
     } || {
@@ -127,6 +140,7 @@ do_deploy(){
     };
 
     # Select the command to gnerate an archive package
+    # NOTE: As Apple requires a specific way to do code signing. The resulting archive would be redundent. 
     case "$ARCHIVER" in
         "tar")
             FILE_NAME+="tar.gz"

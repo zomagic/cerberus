@@ -24,7 +24,7 @@ Param(
     [switch]$clearbuilds = $false
 )
 
-[string]$SCRIPT_VER = "1.2.0"
+[string]$SCRIPT_VER = "1.3.0"
 
 Clear-Host
 
@@ -33,7 +33,6 @@ Clear-Host
 [string]$ROOT = Resolve-Path "$SRC\.."
 [string]$BIN = "$ROOT\bin"
 [string]$MODULES = "$SRC\builders\pwshell"
-[string]$MINGW_STORE = ""
 
 # Import the additional scripts that contain core functions
 ."$MODULES\common.ps1"
@@ -63,16 +62,23 @@ if($clearbuilds) {
     exit 0
 }
 
-# The base requirments for building Cerberus is that a GCC compiler is present.
-do_mingw($mingw)
+# Check for a git installation. This will set the GIT_INSTALLED variable based on if git is installed.
+do_git_check
+
+# As the onlny file that this script will modify is config.winnt.txt. Then check if that file is safe to update.
+if($global:GIT_INSTALLED) {
+    execute "git" "diff --exit-code $BIN/config.winnt.txt"
+    if($global:EXITCODE -ne 0) {
+        do_error "The config.winnt.txt file has been modified.`nYou should commit/ammend/stash the changes to the local repository and then rerun this script."
+    }
+}
+
+# The base requirments for building Cerberus is that a GCC compiler is present. But is not a fatal error, as Visual Studio can be used.
+$mingw = do_mingw($mingw)
 if ($global:EXITCODE -ne 0) {
     do_error("NO MINGW COMPILER PRESENT")
     if ($global:EXITCODE -gt -2) { pause }
 }
-
-# Store the current config.winnt.txt MINGW_PATH before updating it with the one the builder script is to use.
-$MINGW_STORE = do_get_config_var "$BIN/config.winnt.txt" "MINGW_PATH"
-do_set_config_var "$BIN/config.winnt.txt" "MINGW_PATH" "$mingw"
 
 # Now get the Visual Studio installs and store them in an array.
 # Any error here will not stop the build tool. It just means that the IDE Ted will not be an option.
@@ -88,6 +94,15 @@ if ($global:COMPILER_INSTALLED -eq $false) {
     exit 1
 }
 
+# Store the current config.winnt.txt MINGW_PATH and MSBUILD_PATH before updating it with the one the builder script is to use.
+# Git will flag this file as changed, so it should be restored back to it's previous state using git before running any
+# deploment, or exiting the builder script.
+$global:MINGW_STORE = do_get_config_var "$BIN/config.winnt.txt" "MINGW_PATH"
+do_set_config_var "$BIN/config.winnt.txt" "MINGW_PATH" "$mingw"
+
+$global:MSBUILD_STORE = do_get_config_var "$BIN/config.winnt.txt" "MSBUILD_PATH"
+do_set_config_var "$BIN/config.winnt.txt" "MSBUILD_PATH" "$($global:MSVC_INSTALLS[$global:MSVC_SELECTED_IDX])\MSBuild\Current\Bin\MSBuild.exe"
+
 # To build Ted requires that both a Qt SDK is installed and that there is a Visual Studio compiler present.
 # Get Qt installs first and store them in an array. Any error here will not stop the build tool. It just means that the IDE Ted will not be an option.
 do_qtsdk_check "$qtkit" "$qtsdk"
@@ -96,6 +111,9 @@ if ($global:EXITCODE -ne 0) {
     if ($global:EXITCODE -gt -2) { pause }
 }
 
+###############
+# MEUN/DISPLAY
+###############
 # Set up the menu items. The array DISPLAY_ITEMS, holds the human readable menu items.
 # The array MENU_ITEMS, holds the function names to call.
 function do_items() {
@@ -118,8 +136,8 @@ function do_items() {
 }
 
 function do_show_deps() {
-    # Display the current MinGW being used
-    do_success "MINGW: $(do_get_config_var "$BIN\config.winnt.txt" "MINGW_PATH")"
+    # Display the path to MinGW compiler to be used.
+    do_success "MINGW: $mingw"
 
     # Display The MSVC compiler being used.
     if ($global:MSVC_SELECTED_IDX -ge 0) {
@@ -195,6 +213,16 @@ if ($showmenu -eq $true) {
 }
 
 # From this point on. Any changanges to config files that should not be part of the deployment should be restored.
-do_set_config_var "$BIN/config.winnt.txt" "MINGW_PATH" "$MINGW_STORE" 
+if(Test-Path("$ROOT/.git")) {
+    if($global:GIT_INSTALLED) {
+        execute "git" "restore $BIN/config.winnt.txt"
+    } else {
+        do_set_config_var "$BIN/config.winnt.txt" "MINGW_PATH" "$global:MINGW_STORE"
+        do_set_config_var "$BIN/config.winnt.txt" "MSBUILD_PATH" "$global:MSBUILD_STORE"
+    }
+} else {
+    do_set_config_var "$BIN/config.winnt.txt" "MINGW_PATH" "$global:MINGW_STORE"
+    do_set_config_var "$BIN/config.winnt.txt" "MSBUILD_PATH" "$global:MSBUILD_STORE"
+}
 
 exit $global:EXITCODE

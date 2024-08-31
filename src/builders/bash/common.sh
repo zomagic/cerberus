@@ -3,18 +3,21 @@
 # COMMON FUNCTIONS
 # THE SCRIPT IS PART OF THE CERBERUS X BUILER TOOL.
 
-# Get the root directory of the Cerberus installation and set variable for BIN and SRC directories.
-ROOT="$( cd -- "$(dirname "$SCRIPTPATH")" >/dev/null 2>&1 ; pwd -P )"
-CERBERUS_ROOT_DIR="$ROOT"
+########################################
+# COMMON FUNCTION USE BY OTHER SCRIPTS
+########################################
+
+# Various flags and variables
+ROOT="$( cd -- "$(dirname "$SCRIPTPATH")" >/dev/null 2>&1 ; pwd -P )"   # Get the root directory of the Cerberus installation.
+CERBERUS_ROOT_DIR="$ROOT"                                               # Set a named Cerberus variable to that of the ROOT variable. 
 BIN="$ROOT/bin"
 SRC="$ROOT/src"
 
-# Set controling varialbes
-EXITCODE=-1
-COMPILER=g++
-QT_INSTALLS=()
-QTVER=
-SHOW_MENU=0
+EXITCODE=-1                 # Used to store the exit code after any call to functions and applications.
+COMPILER=g++                # The file name of the compiler to use.
+QT_INSTALLS=()              # Holds the total number of Qt kits installed
+QTVER=                      # Holds the Qt version number
+SHOW_MENU=0                 # Flag used to show the menu
 
 # Set up additional variable based on the host.
 [ $(uname -s) = "Linux" ] && {
@@ -23,7 +26,7 @@ SHOW_MENU=0
     HOST="linux"
     TARGET="gcc_$HOST"
     QMAKE_TYPE="gcc_64";
-    GCC_VER="10"                            # For Linux: Set the default version of GCC is available.
+    GCC_VER="10"                            # For Linux: Set the default version of GCC if available.
 } || {
     QTDIR="$HOME/Qt";    # Set the default Qt Installer directory location to the users home directory.
     EXTENSION=".app"
@@ -37,7 +40,9 @@ SHOW_MENU=0
     MACOS_BUNDLE_PREFIX="com.cerberus-x"    # For macOS: Holds the default applcation bundle prefix.
 }
 
-# General coloured information output.
+#########################################
+# Display colourised information
+#########################################
 do_info(){
     echo -e "\033[36m$1\033[0m"
 }
@@ -62,7 +67,9 @@ do_unknown(){
     echo -e "\033[35m$1\033[0m"
 }
 
-# Function to execute external applications.
+###################################################
+# General external application execution function.
+###################################################
 execute(){
     PARAM=
     for exec_param in $@; do
@@ -80,7 +87,10 @@ execute(){
     }
 }
 
-# Function to clean .build directories.
+###############################################
+# Function to clean up after transcc builds.
+###############################################
+# Passing anything as the second parameter will allow a non .build directory to be deleted.
 clean_build(){
     [ -z "$2" ] && {
         _dir="$1";
@@ -105,7 +115,11 @@ do_build_result(){
     }
 }
 
-# Function to execute transcc
+########################################
+# Function to build with transcc
+########################################
+# The last parameter sets the garbage collection mode to use. The default is to use gc mode 1.
+# See the Cerberus config documentation about garbage collection.
 transcc(){
     [ ! -f "$BIN/transcc_$HOST" ] && {
         do_error "NO TRANSCC PRESENT"
@@ -115,9 +129,9 @@ transcc(){
         local target=$2
         local srcpath="$SRC/$3"
         local srcfile="$3"
-        [ -z "$4" ] && { mode="0"; } || { mode="1"; }
+        [ -z "$4" ] && { gc_mode="0"; } || { gc_mode="1"; }
         
-        execute "$BIN/transcc_$HOST -target=$target -builddir=$srcfile.build -clean -config=release +CPP_GC_MODE=$mode $srcpath/$srcfile.cxs"
+        execute "$BIN/transcc_$HOST -target=$target -builddir=$srcfile.build -clean -config=release +CPP_GC_MODE=$gc_mode $srcpath/$srcfile.cxs"
         do_build_result
         
         return $EXITCODE;
