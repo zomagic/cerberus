@@ -93,8 +93,8 @@ Function CurrentDir:String()
 	Return BBProcess.CurrentDir()
 End
 
-Function ChangeDir:Void( dir:String )
-	BBProcess.ChangeDir dir
+Function ChangeDir:int( dir:String )
+	Return BBProcess.ChangeDir( dir )
 End
 
 Function Execute:Int( cmd:String )
