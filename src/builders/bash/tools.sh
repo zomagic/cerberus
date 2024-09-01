@@ -3,7 +3,13 @@
 # TOOL BUILDER FUNCTIONS
 # THE SCRIPT IS PART OF THE CERBERUS X BUILER TOOL.
 
-# Function to build transcc
+#######################################################################################################
+#   Build transcc, cserver, makedocs, launcher and the IDE Ted
+#######################################################################################################
+
+# TRANSCC
+# This function basically just builds from the c++ sources.
+# Any new or update version of the transcc c++ source should replace the ones in the src/transcc/transcc.build directory. 
 do_transcc(){
     EXITCODE=0
     do_info "BUILDING TRANSCC WITH $COMPILER"
@@ -46,7 +52,7 @@ do_transcc(){
     return $EXITCODE
 }
 
-# Function to build CServer
+# CSERVER TOOL
 do_cserver(){
     EXITCODE=0
     
@@ -81,7 +87,7 @@ do_cserver(){
     return $EXITCODE
 }
 
-# Function to build the launcher
+# LAUNCHER TOOL
 do_launcher(){
     EXITCODE=0
     
@@ -112,7 +118,7 @@ do_launcher(){
     return $EXITCODE
 }
 
-# Function to build makedocs
+# MAKEDOCS TOOL
 do_makedocs(){
     EXITCODE=0
     
@@ -130,7 +136,7 @@ do_makedocs(){
     return $EXITCODE
 }
 
-# Function to build the IDE Ted.
+# IDE TED
 do_ted(){
     EXITCODE=0
     
@@ -174,10 +180,15 @@ do_ted(){
     return $EXITCODE
 }
 
+
+# FREE DESKTOP
+# Generate the .desktop files for desktop integration.
 do_freedesktop(){
     do_init_linux_desktop
 }
 
+# BUILD ALL
+# Builds all the above tools.
 do_all(){
     do_header "\n====== BUILDING ALL TOOLS ======"
     do_info "BUILDING TransCC"
@@ -213,7 +224,9 @@ do_all(){
     }
 }
 
-# Remove all previously built files.
+################################################
+# CLEAN THE WORK REPOSITORY OF BUILT FILES
+################################################
 do_clearbuilds(){
     do_info "CLEARING OUT PREVIOUS BUILDS"
 
@@ -230,7 +243,7 @@ do_clearbuilds(){
     find "$ROOT" -type f -name '*.desktop' -delete
   
     # Remove CServer linux and winnt
-    find "$BIN" -type f -name 'Cerberus.*' -delete
+    find "$BIN" -type f -name 'cserver_*' -delete
 
     # Remove makedocs linux, winnt and macos
     find "$BIN" -type f -name 'makedocs_*' -delete

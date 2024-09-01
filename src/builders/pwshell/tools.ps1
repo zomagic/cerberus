@@ -1,32 +1,13 @@
 # TOOLS FUNCTIONS
 # THE SCRIPT IS PART OF THE CERBERUS X BUILER TOOL.
 
-# Replace the first key/value pair that matched the key.
-function do_set_config_var([string]$_path, [string]$_key, [string]$_value) {
-    $edits = (Get-Content -Path $_path) |
-    ForEach-Object {
-        if ($_ -match '^' + $_key + '=\".*\"' ) {
-            $_ -replace "($_key=)`".*`"", "`$1`"$_value`""
-        }
-        else {
-            $_
-        }
-    }
-    
-    $edits -join "`n" | Out-File $_path -Encoding ascii
+#######################################################################################################
+#   Build transcc, cserver, makedocs, launcher and the IDE Ted
+#######################################################################################################
 
-    # Running git with add stops it being scheduled to changes
-    $global:EXITCODE = 0
-    execute "git" "add $BIN\config.winnt.txt"
-}
-
-# Gets the first key=value pair from a config file that matches the key.
-function do_get_config_var([string]$_path, [string]$_key) {
-    $value = switch -Regex -File $_path { "^$_key=`"(.*)`"" { $Matches[1]; break } }
-    return $value
-}
-
-# Build the transcc tool
+# TRANSCC
+# This function basically just builds from the c++ sources.
+# Any new or update version of the transcc c++ source should replace the ones in the src/transcc/transcc.build directory. 
 function do_transcc() {
 
     do_info "BUILDING TransCC"
@@ -35,10 +16,10 @@ function do_transcc() {
     [string]$cpptool_dir = "$SRC\transcc\transcc.build\cpptool"
     [string]$build_dir = ""
 
-    # Check for an exisiting transcc
+    # Check for an exisiting transcc and remove it.
     if (Test-Path("$BIN\transcc_winnt.exe")) { Remove-Item "$BIN\transcc_winnt.exe" }
 
-    # Call the build tool depending on the toolchain selected.
+    # Build transcc from the c++ source files using the tool chain selected. If it is installed.
     if (($msbuild -eq $true)-and($global:MSVC_SELECTED_IDX -ge 0)) {
         $build_dir = "$cpptool_dir\msvc\Release64"
         execute "msbuild" "/p:OutDir=`"$BIN\`" /p:TargetName=`"transcc_winnt`" /p:Configuration=Release64 /p:Platform=x64 $cpptool_dir\msvc\msvc.sln"
@@ -61,12 +42,11 @@ function do_transcc() {
     $global:EXITCODE = 0
 }
 
-# Build the CServer tool.
+# CSERVER TOOL
 function do_cserver() {
     
-    # Call transcc
-    transcc "CServer" "Desktop_Game" "cserver"
-    
+    # Call transcc to build cserver
+    transcc "CServer" "Desktop_Game" "cserver"  
     if ($global:EXITCODE -ne 0) {
         do_error "$global:MESSAGE`n"
         return
@@ -80,7 +60,7 @@ function do_cserver() {
         $release_dir += "gcc_winnt\Release64"
     }
 
-    # Remove the old version before moving the new one into the bin directory.
+    # Remove the old version before moving the new one into the cerberus bin directory.
     if (Test-Path("$BIN\cserver_winnt.exe")) { Remove-Item "$BIN\cserver_winnt.exe" }
     Move-Item "$release_dir\CerberusGame.exe" "$BIN\cserver_winnt.exe"
 
@@ -95,7 +75,7 @@ function do_cserver() {
     do_success "BUILD SUCCESSFUL`n"
 }
 
-# Build the makedocs tool.
+# MAKEDOCS TOOL
 function do_makedocs() {
 
     # Call transcc
@@ -110,12 +90,12 @@ function do_makedocs() {
 
     clean_build "makedocs"
 
-
     do_success "BUILD SUCCESSFUL`n"
     $global:EXITCODE = 0
 }
 
-# Build the launcher tool
+# LAUNCHER TOOL
+# Due to some limitations with using the Cerberus launcher source file. The launcher is built from a custom c++ source file.
 function do_launcher() {
     do_info "BUILDING Launcher"
 
@@ -123,20 +103,20 @@ function do_launcher() {
     [string]$project_dir = "$SRC\launcher\winnt"
     [string]$build_dir = "$project_dir\Release64"
     [string]$icon = "$SRC\launcher\cerberus.ico"
-
+    
+    # Remove the previous launcher if detected.
     if (Test-Path("$ROOT\Cerberus.exe")) { Remove-Item "$ROOT\Cerberus.exe" }
 
-    # Call the build tool depending on the toolchain selected.
     if (($msbuild -eq $true)-and($global:MSVC_SELECTED_IDX -ge 0)) {
         execute "msbuild" "/p:OutDir=`"$ROOT\`" /p:ApplicationIcon=`"$icon`" /p:TargetName=`"Cerberus`" /p:Configuration=Release64 /p:Platform=x64 $project_dir\msvc.sln"
         clean_build "$build_dir" $false
+        clean_build "$SRC\launcher\resource.o" $false
 
         if ($global:EXITCODE -ne 0) {
             do_error "$global:MESSAGE`n"
             return
         }
     } else {
-        if (Test-Path("$SRC\launcher\res.o")) { Remove-Item "$SRC\launcher\res.o" }
 
         execute "windres.exe" "`"$SRC\launcher\resource.rc`" -O coff -o `"$SRC\launcher\res.o`""
         if ($global:EXITCODE -ne 0) {
@@ -145,6 +125,7 @@ function do_launcher() {
         }
 
         execute "g++.exe" "-Os -DNDEBUG -o `"$ROOT\Cerberus.exe`" `"$project_dir\launcher.cpp`" `"$SRC\launcher\res.o`" -ladvapi32 -s"
+        clean_build "$SRC\launcher\res.o" $false
         if ($global:EXITCODE -ne 0) {
             do_error "$global:MESSAGE`n"
             return
@@ -155,7 +136,7 @@ function do_launcher() {
     $global:EXITCODE = 0
 }
 
-# Build the IDE Ted
+# IDE TED
 function do_ted() {
     do_info "BUILDING THE IDE TED"
 
@@ -193,7 +174,8 @@ function do_ted() {
     $global:EXITCODE = 0
 }
 
-# Function to do build all
+# BUILD ALL
+# Builds all the above tools.
 function do_all() {
     do_header "`n====== BUILDING ALL TOOLS ======"
     do_transcc
@@ -202,6 +184,8 @@ function do_all() {
     if ($global:EXITCODE -eq 0) { do_launcher }
 
     if ($global:EXITCODE -eq 0) {
+
+        # Check that there is an MSVC tool chain and Qt Kit present before building. Else issue warning message and skip building. 
         if (($global:MSVC_INSTALLS.Count -gt 0) -and ($global:QT_INSTALLS.Count -gt 0)) {
             do_ted
         }
@@ -222,7 +206,9 @@ function do_all() {
     }
 }
 
-# Function to remove all previously built files.
+################################################
+# CLEAN THE WORK REPOSITORY OF BUILT FILES
+################################################
 function do_clearbuilds() {
     do_info "CLEARING OUT PREVIOUS BUILDS"
 
@@ -245,8 +231,10 @@ function do_clearbuilds() {
     Remove-Item "$BIN\makedocs_*" -Force
 
     # Remove Ted linus and winnt
-    If(Test-Path("$BIN\Ted")) { Remove-Item "$BIN\Ted" -Force }
-    If(Test-Path("$BIN\Ted.exe")) { Remove-Item "$BIN\Ted.exe" -Force }
+    if(Test-Path("$BIN\Ted")) { Remove-Item "$BIN\Ted" -Force }
+    if(Test-Path("$BIN\Ted.exe")) { Remove-Item "$BIN\Ted.exe" -Force }
+    if(Test-Path("$BIN\platforms")) { Remove-Item "$BIN\platforms" -Recurse -Force }
+    if(Test-Path("$BIN\qml")) { Remove-Item "$BIN\qml" -Recurse -Force }
 
     # Remove Qt Linux support files and directories.
     Remove-Item "$BIN\lib*" -Recurse -Force
