@@ -212,7 +212,7 @@ Class blob_monster Extends App
 	 ' Stuff to do on startup...
 	Method OnCreate ()
 		canv = New Canvas
-		blobimage=Image.Load( "blob.png" )
+		blobimage=Image.Load( "blob.png", 0.5, 0.5, Image.Filter)
 
 		theMonster=New BlobMonster(10,10,blobimage,canv)
 		
