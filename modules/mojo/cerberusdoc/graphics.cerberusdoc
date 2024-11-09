@@ -406,7 +406,7 @@ Returns the width of the given text.
 Returns the height of the current font.
 
 
-# Function DrawText:Int(text:String,x:Int,y:Int,xalign:Float=0,yalign:Float=0)
+# Function DrawText:Int(text:String,x:Int,y:Int,xhandle:Float=0,yhandle:Float=0)
 
 Draws text at coordinates x, y in the current font.
 
