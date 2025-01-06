@@ -848,27 +848,35 @@ Class BumpShader Extends Shader
 	Method OnLoadMaterial:Material( material:Material,path:String,texFlags:Int )
 	
 		Local format:=4
-	
-		Local ext:=ExtractExt( path )
-		If ext path=StripExt( path ) Else ext="png"
+		Local colorTex:Texture
+		Local specularTex:Texture
+		Local normalTex:Texture
+		If path[..5]="blob:" 
+			colorTex=Texture.Load( path,format,texFlags )
+			If Not colorTex Return Null
+		else
 		
-		Local colorTex:=Texture.Load( path+"."+ext,format,texFlags )
-		If Not colorTex colorTex=Texture.Load( path+"_d."+ext,format,texFlags )
-		If Not colorTex colorTex=Texture.Load( path+"_diff."+ext,format,texFlags )
-		If Not colorTex colorTex=Texture.Load( path+"_diffuse."+ext,format,texFlags )
-		
-		Local specularTex:=Texture.Load( path+"_s."+ext,format,texFlags )
-		If Not specularTex specularTex=Texture.Load( path+"_spec."+ext,format,texFlags )
-		If Not specularTex specularTex=Texture.Load( path+"_specular."+ext,format,texFlags )
-		If Not specularTex specularTex=Texture.Load( path+"_SPECULAR."+ext,format,texFlags )
-		
-		Local normalTex:=Texture.Load( path+"_n."+ext,format,texFlags )
-		If Not normalTex normalTex=Texture.Load( path+"_norm."+ext,format,texFlags )
-		If Not normalTex normalTex=Texture.Load( path+"_normal."+ext,format,texFlags )
-		If Not normalTex normalTex=Texture.Load( path+"_NORMALS."+ext,format,texFlags )
-		
-		If Not colorTex And Not specularTex And Not normalTex Return Null
-		
+			Local ext:=ExtractExt( path )
+			If ext path=StripExt( path ) Else ext="png"
+			
+			colorTex=Texture.Load( path+"."+ext,format,texFlags )
+			If Not colorTex colorTex=Texture.Load( path+"_d."+ext,format,texFlags )
+			If Not colorTex colorTex=Texture.Load( path+"_diff."+ext,format,texFlags )
+			If Not colorTex colorTex=Texture.Load( path+"_diffuse."+ext,format,texFlags )
+			
+			specularTex=Texture.Load( path+"_s."+ext,format,texFlags )
+			If Not specularTex specularTex=Texture.Load( path+"_spec."+ext,format,texFlags )
+			If Not specularTex specularTex=Texture.Load( path+"_specular."+ext,format,texFlags )
+			If Not specularTex specularTex=Texture.Load( path+"_SPECULAR."+ext,format,texFlags )
+			
+			normalTex=Texture.Load( path+"_n."+ext,format,texFlags )
+			If Not normalTex normalTex=Texture.Load( path+"_norm."+ext,format,texFlags )
+			If Not normalTex normalTex=Texture.Load( path+"_normal."+ext,format,texFlags )
+			If Not normalTex normalTex=Texture.Load( path+"_NORMALS."+ext,format,texFlags )
+			
+			If Not colorTex And Not specularTex And Not normalTex Return Null
+			
+		endif
 		material.SetTexture "ColorTexture",colorTex
 		material.SetTexture "SpecularTexture",specularTex
 		material.SetTexture "NormalTexture",normalTex

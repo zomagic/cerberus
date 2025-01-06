@@ -4,3 +4,4 @@ Import mojo.input
 Import mojo.audio
 Import mojo2.graphics
 Import mojo2.renderer
+Import mojo2.asyncimageloader

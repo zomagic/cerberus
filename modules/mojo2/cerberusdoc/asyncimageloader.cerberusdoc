@@ -1,0 +1,25 @@
+
+# Module mojo2.asyncimageloader
+
+# Import brl.asyncevent
+
+The Mojo2 async loaders module provides functions and interfaces for loading images asynchronously.
+
+
+# Function LoadImageAsync:Void( path:String, xhandle:Float=.5, yhandle:Float=.5, flags:Int=Image.Filter|Image.Mipmap, shader:Shader=Null ,onComplete:IOnLoadImageComplete)
+
+Begins loading an image asynchronously.
+
+Once the image has loaded, the [[IOnLoadImageComplete.OnLoadImageComplete|OnLoadImageComplete]] method of the specified @onComplete object will be invoked.
+
+Note: When using asynchronous features, your app must continually call the [[UpdateAsyncEvents]] function to process async events. This can be done be calling UpdateAsyncEvents once per OnUpdate.
+
+
+# Interface mojo2.asyncimageloader.IOnLoadImageComplete
+
+# Method OnLoadImageComplete:Void( image:Image,path:String,source:IAsyncEventSource )
+
+Called when an image has completed loading. 
+
+If @image is null, the load failed.
+

@@ -2,19 +2,22 @@
 var bb_texs_loading=0;
 
 function BBLoadStaticTexImage( path,info ){
-
-	var game=BBHtml5Game.Html5Game();
-
-	var ty=game.GetMetaData( path,"type" );
-	if( ty.indexOf( "image/" )!=0 ) return null;
-	
-	if( info.length>0 ) info[0]=parseInt( game.GetMetaData( path,"width" ) );
-	if( info.length>1 ) info[1]=parseInt( game.GetMetaData( path,"height" ) );
-	
-	var img=new Image();
-	img.src=game.PathToUrl( path );
-	
-	return img;
+	if (path.startsWith("blob:")) {
+		var img=new Image();
+		img.src=path;	
+		if( info.length>0 ) info[0]=parseInt(img.width);
+		if( info.length>1 ) info[1]=parseInt(img.height);
+		return img;
+	}else{
+		var game=BBHtml5Game.Html5Game();
+		var ty=game.GetMetaData( path,"type" );
+		if( ty.indexOf( "image/" )!=0 ) return null;
+		if( info.length>0 ) info[0]=parseInt( game.GetMetaData( path,"width" ) );
+		if( info.length>1 ) info[1]=parseInt( game.GetMetaData( path,"height" ) );
+		var img=new Image();
+		img.src=game.PathToUrl( path );
+		return img;
+	}
 }
 
 function BBTextureLoading( tex ){

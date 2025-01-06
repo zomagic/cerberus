@@ -1,0 +1,44 @@
+Import mojo2
+
+Class myapp Extends App Implements IOnLoadImageComplete
+
+	Field img:Image
+	Field canvas:Canvas
+		
+	Method OnCreate()
+		SetUpdateRate 60
+		canvas=New Canvas
+		
+		LoadImageAsync("https://picsum.photos/200/300",0.0,0.0,,,Self )		
+	End
+	
+	Method OnUpdate()
+		UpdateAsyncEvents
+	End
+
+	
+	Method OnRender()
+		canvas.Clear 0.6,0.4,0.2
+		
+		canvas.DrawText "If you're loading a file from a server, CORS (Access-Control-Allow-Origin)",0,0
+		canvas.DrawText "must be enabled. Without the correct CORS headers, the request will fail. ",0,10
+		canvas.DrawText "This isn't specific to CerberusX - CORS is a general requirement for ",0,20
+		canvas.DrawText "accessing images Or resources from other servers.",0,30
+		canvas.DrawText "Loading free image from https://picsum.photos/200/300",0,50
+
+		If img canvas.DrawImage img,50,100
+		canvas.Flush()
+		
+	End
+	
+	Method OnLoadImageComplete:Void(image:Image,path:String,source:IAsyncEventSource)
+		If image Print path+" Loaded!" Else Print "ERR"
+		Self.img=image
+	End
+
+End
+
+Function Main()
+	New myapp
+End
+
