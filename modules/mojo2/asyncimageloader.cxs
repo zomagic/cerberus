@@ -3,7 +3,7 @@
 '
 'If you're loading a file from a server, CORS (Access-Control-Allow-Origin) must be enabled.
 'Without the correct CORS headers, the request will fail.
-'This isn't specific to CerberusX � CORS is a general requirement for accessing images or resources from other servers.
+'This isn't specific to CerberusX - CORS is a general requirement for accessing images or resources from other servers.
 
 Import mojo2.graphics
 Import brl.asyncevent
@@ -17,61 +17,57 @@ Import brl.asyncevent
 	#Endif
 #Elseif TARGET="html5"
 	Import "native/asyncimageloader.html5.js"
-#Else
-	#Error "The AsyncImageLoader module is only available on the android and html5 targets"
 #End
-Extern Private
-Class BBAsyncImageLoader Extends Null="BBAsyncImageLoader"
+
+#If TARGET="android" Or TARGET="html5"
+	Public
+	Interface IOnLoadImageComplete
+		Method OnLoadImageComplete:Void(image:Image, path:String, source:IAsyncEventSource)
+	End
+	Function LoadImageAsync:Void( path:String, xhandle:Float=.5, yhandle:Float=.5, flags:Int=Image.Filter|Image.Mipmap, shader:Shader=Null ,onComplete:IOnLoadImageComplete)
+		Local loader:=New AsyncImageLoader( path,xhandle,yhandle,flags,shader,onComplete )
+	End	
 	Private
-	Method DownloadImage:Void(url:String)
-	Method isDoneDownload:String()
-	Method clearDownload:Void()
-End 	
-
-Public
-
-Interface IOnLoadImageComplete
-	Method OnLoadImageComplete:Void(image:Image, path:String, source:IAsyncEventSource)
-End
-
-Function LoadImageAsync:Void( path:String, xhandle:Float=.5, yhandle:Float=.5, flags:Int=Image.Filter|Image.Mipmap, shader:Shader=Null ,onComplete:IOnLoadImageComplete)
-	Local loader:=New AsyncImageLoader( path,xhandle,yhandle,flags,shader,onComplete )
-end	
-
-
-Class AsyncImageLoader Implements IAsyncEventSource
-	Field _asyncimageloader:BBAsyncImageLoader
-	Field _state:Int
-	Field _onOpen:IOnLoadImageComplete
-	Field _xhandle:Float
-	Field _yhandle:Float
-	Field _path:String
-	Field _flags:Int
-	Field _shader:Shader
-	Field _img:Image
-	Method New( path:String, xhandle:Float=.5, yhandle:Float=.5, flags:Int=Image.Filter|Image.Mipmap, shader:Shader=Null ,onComplete:IOnLoadImageComplete)
-		_asyncimageloader=New BBAsyncImageLoader	
-		AddAsyncEventSource Self
-		_onOpen = onComplete
-		_state = 1
-		_asyncimageloader.DownloadImage(path)
-		_path = path
-		_xhandle=xhandle
-		_yhandle=yhandle
-		_flags=flags
-		_shader=shader
-		_img = null
+	Class AsyncImageLoader Implements IAsyncEventSource
+		Field _asyncimageloader:BBAsyncImageLoader
+		Field _state:Int
+		Field _onOpen:IOnLoadImageComplete
+		Field _xhandle:Float
+		Field _yhandle:Float
+		Field _path:String
+		Field _flags:Int
+		Field _shader:Shader
+		Field _img:Image
+		Method New( path:String, xhandle:Float=.5, yhandle:Float=.5, flags:Int=Image.Filter|Image.Mipmap, shader:Shader=Null ,onComplete:IOnLoadImageComplete)
+			_asyncimageloader=New BBAsyncImageLoader	
+			AddAsyncEventSource Self
+			_onOpen = onComplete
+			_state = 1
+			_asyncimageloader.DownloadImage(path)
+			_path = path
+			_xhandle=xhandle
+			_yhandle=yhandle
+			_flags=flags
+			_shader=shader
+			_img = Null
+		End
+		Method UpdateAsyncEvents:Void()
+			If _state=1
+				If _asyncimageloader.isDoneDownload()
+					_img=Image.Load(_asyncimageloader.isDoneDownload(),_xhandle,_yhandle,_flags,_shader) 
+					_asyncimageloader.clearDownload()
+					_state = 2
+					RemoveAsyncEventSource Self
+					_onOpen.OnLoadImageComplete(_img,_path,Self)
+				Endif
+			End
+		End
 	End
-	Method UpdateAsyncEvents:Void()
-		If _state=1
-			If _asyncimageloader.isDoneDownload()
-				_img=Image.Load(_asyncimageloader.isDoneDownload(),_xhandle,_yhandle,_flags,_shader) 
-				_asyncimageloader.clearDownload()
-				_state = 2
-				RemoveAsyncEventSource Self
-				_onOpen.OnLoadImageComplete(_img,_path,Self)
-			endif
-		end
-	End
-End
-
+	Extern Private
+	Class BBAsyncImageLoader Extends Null="BBAsyncImageLoader"
+		Private
+		Method DownloadImage:Void(url:String)
+		Method isDoneDownload:String()
+		Method clearDownload:Void()
+	End 	
+#Endif
